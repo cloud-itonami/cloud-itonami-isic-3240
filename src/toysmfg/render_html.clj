@@ -5,7 +5,7 @@
   toysmfg.store). No invented numbers, no timestamps, byte-identical
   across reruns."
   (:require [jp-go-dds.skin]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [toysmfg.store :as store]
             [toysmfg.operation :as op]
             [toysmfg.phase :as phase]
