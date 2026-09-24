@@ -1,0 +1,42 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:dev:physics` runs it.
+;;
+;; README: an ISIC 3240 plant injection-moulds, assembles and safety-tests
+;; plastic toys, wooden toys, board games and puzzles. The physical work
+;; around the moulding cell: the moulded ABS part cooling in the tool until it
+;; can be ejected, the mould's cooling-water channel, and a take-out robot
+;; lifting the shot (parts + runner) out of the open tool.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isic-3240"
+ :cases
+ [{:id :abs-part-in-mould-cooling
+   :kind :thermal
+   :procedure "moulded ABS toy part cools against the 50 C mould wall from its 230 C melt until its mid-plane falls to the 90 C ejection temperature. Half the wall is modelled with an adiabatic (symmetry) back face, so the back face is the mid-plane"
+   :params {:conductivity-w-mk 0.17 :density-kg-m3 1050.0 :specific-heat-j-kgk 1400.0
+            :t0-c 230.0 :t-hot-c 50.0 :front-fixed? true :h-back-w-m2k 0.0
+            :threshold-c 90.0 :threshold-direction :falling :duration-s 300.0 :nodes 11}
+   :sweep {:param :thickness-m :values [0.0006 0.0008 0.0010 0.0013 0.0016 0.0020]}
+   :quantity :time-to-threshold-s
+   :limit {:max 20.0 :basis "estimate: a 20-second cooling share of the toy-part moulding cycle; ABS properties and the 90 C ejection temperature are estimates"}
+   :boundary {:lo 0.0003 :hi 0.004}}
+  {:id :mould-cooling-channel
+   :kind :pipe-flow
+   :procedure "temperature-control unit pushes water through one 8 mm cooling channel circuit of the toy mould (2.5 m drilled length incl. bends)"
+   :params {:diameter-m 0.008 :length-m 2.5 :roughness-m 1.0e-5
+            :density-kg-m3 988.0 :viscosity-pa-s 0.55e-3 :pump-efficiency 0.40 :elevation-m 0.0}
+   :sweep {:param :q-m3s :values [0.00001 0.00002 0.00004 0.00006 0.00010]}
+   :quantity :reynolds
+   :limit {:min 10000.0 :basis "estimate: mould-cooling rule of thumb that channel flow should be fully turbulent (Re above ~10 000) for effective heat removal; 50 C water properties"}
+   :boundary {:lo 0.000005 :hi 0.0002}}
+  {:id :take-out-shot
+   :kind :manipulator
+   :procedure "take-out robot grips the shot (toy parts plus runner) from the open mould and swings it up and over onto the conveyor"
+   :params {:l1-m 0.50 :l2-m 0.45 :m1-kg 5.0 :m2-kg 3.0
+            :from [0.55 -0.10] :to [0.20 0.60] :duration-s 1.0 :steps 400}
+   :sweep {:param :payload-kg :values [0.2 0.5 1.0 2.0 3.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 60.0 :basis "estimate: continuous shoulder torque of a ~5 kg-payload take-out arm class"}
+   :boundary {:lo 0.05 :hi 20.0}}]}
